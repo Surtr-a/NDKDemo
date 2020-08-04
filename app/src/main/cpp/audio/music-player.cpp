@@ -16,39 +16,22 @@ extern "C" {
 }
 
 #include "../android_log.h"
+#include "MyJNICall.h"
 
-// 输出采样率
-#define AUDIO_SAMPLE_RATE 44100
-// 每一帧大小，采样率*16bit采样格式*左右双声道
-#define AUDIO_SAMPLES_SIZE_PER_CHANNEL AUDIO_SAMPLE_RATE * 4
-
-JNIEXPORT jobject createAudioTrack(JNIEnv *env) {
-    jclass audio_track_class = env->FindClass("android/media/AudioTrack");
-    jmethodID construct_mid = env->GetMethodID(audio_track_class, "<init>", "(IIIIII)V");
-    int channelConfig = (0x4 | 0x8);
-    int audioFormat = 2;
-    int sampleRateInHz = AUDIO_SAMPLE_RATE;
-    // 调用 getMinBufferSize()
-    jmethodID  getMinBufferSizeMid = env->GetStaticMethodID(audio_track_class, "getMinBufferSize", "(III)I");
-    int minBufferSizeInByte = env->CallStaticIntMethod(audio_track_class, getMinBufferSizeMid, sampleRateInHz, channelConfig, audioFormat);
-    jobject audio_track = env->NewObject(audio_track_class, construct_mid, 3, sampleRateInHz, channelConfig, audioFormat, minBufferSizeInByte, 1);
-    // 调用 play()
-    jmethodID audio_track_play_mid = env->GetMethodID(audio_track_class, "play", "()V");
-    env->CallVoidMethod(audio_track, audio_track_play_mid);
-    return audio_track;
-}
+MyJNICall *myJniCall;
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_flag_demo_ndkdemo_utils_MyPlayer_nPlay(JNIEnv *env, jobject thiz, jstring url) {
     const char *url_ = env->GetStringUTFChars(url, nullptr);
+    myJniCall = new MyJNICall(env, nullptr);
 
     // 注册组件，废弃，4.0以上忽略
 //    av_register_all();
     avformat_network_init();
 
     // 打开音频文件
-    AVFormatContext *avFormatContext= avformat_alloc_context();
+    AVFormatContext *avFormatContext = avformat_alloc_context();
     if (avformat_open_input(&avFormatContext, url_, nullptr, nullptr) != 0) {
         LOGE("打开音频失败");
         return;
@@ -105,27 +88,25 @@ Java_com_flag_demo_ndkdemo_utils_MyPlayer_nPlay(JNIEnv *env, jobject thiz, jstri
     uint64_t in_ch_layout = avCodecContext->channel_layout;
     // 输出声道布局（立体声）
     uint64_t out_ch_layout = AV_CH_LAYOUT_STEREO;
-    // 输出声道个数
-    int out_channel_nb = av_get_channel_layout_nb_channels(out_ch_layout);
-    // 重采样
-    swr_alloc_set_opts(swrContext, out_ch_layout, out_sample_fmt, out_sample_rate, in_ch_layout, in_sample_fmt, in_sample_rate, 0,
+    // 重采样上下文
+    swrContext = swr_alloc_set_opts(nullptr, out_ch_layout, out_sample_fmt, out_sample_rate, in_ch_layout, in_sample_fmt, in_sample_rate, 0,
                        nullptr);
+    if (swrContext == nullptr) {
+        LOGE("获取重采样上下文失败");
+        return;
+    }
     if (swr_init(swrContext) < 0) {
         LOGE("初始化重采样上下文失败");
         return;
     }
 
+//    int out_channels = av_get_channel_layout_nb_channels(out_ch_layout);
+//    int out_buffer_size = av_samples_get_buffer_size(nullptr, out_channels, aVCodecParameters->frame_size, out_sample_fmt, 0);
     auto *out_buffer = static_cast<uint8_t *>(av_malloc(AUDIO_SAMPLES_SIZE_PER_CHANNEL));
 
     // 逐帧播放
-    // 创建 AudioTrack 对象
-    jobject audio_track = createAudioTrack(env);
-
-    jclass audio_track_class = env->FindClass("android/media/AudioTrack");
-    jmethodID audio_track_write_mid = env->GetMethodID(audio_track_class, "write", "([BII)I");
     jbyteArray audio_sample_array;
     jbyte *audio_sample_byte;
-
     AVPacket *avPacket = av_packet_alloc();
     AVFrame *avFrame = av_frame_alloc();
     while (av_read_frame(avFormatContext, avPacket) >= 0) {
@@ -138,6 +119,7 @@ Java_com_flag_demo_ndkdemo_utils_MyPlayer_nPlay(JNIEnv *env, jobject thiz, jstri
                 // 获取 sample size
                 int out_buffer_size = av_samples_get_buffer_size(nullptr, avFrame->channels,avFrame->nb_samples, avCodecContext->sample_fmt, 0);
                 audio_sample_array = env->NewByteArray(out_buffer_size);
+                // 获取数组指针
                 audio_sample_byte = env->GetByteArrayElements(audio_sample_array, nullptr);
                 // 重采样
                 swr_convert(swrContext, &out_buffer, out_buffer_size, (const uint8_t **)avFrame->data, avFrame->nb_samples);
@@ -148,7 +130,7 @@ Java_com_flag_demo_ndkdemo_utils_MyPlayer_nPlay(JNIEnv *env, jobject thiz, jstri
                 env->ReleaseByteArrayElements(audio_sample_array, audio_sample_byte, 0);
 
                 // AudioTrack.write() PCM 数据
-                env->CallIntMethod(audio_track, audio_track_write_mid, audio_sample_array, 0, out_buffer_size);
+                myJniCall->callAudioTrackWrite(audio_sample_array, 0, out_buffer_size);
                 env->DeleteLocalRef(audio_sample_array);
             }
         }
@@ -161,8 +143,8 @@ Java_com_flag_demo_ndkdemo_utils_MyPlayer_nPlay(JNIEnv *env, jobject thiz, jstri
     av_packet_free(&avPacket);
     av_frame_free(&avFrame);
     env->ReleaseByteArrayElements(audio_sample_array, audio_sample_byte, JNI_ABORT);
-    env->DeleteLocalRef(audio_track);
     av_free(out_buffer);
+    delete myJniCall;
     swr_free(&swrContext);
     if (avCodecContext != nullptr) {
         avcodec_close(avCodecContext);
