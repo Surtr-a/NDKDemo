@@ -9,6 +9,7 @@
 #include "../../../../../../../../../opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/jni.h"
 
 class MyJNICall {
+public:
     JNIEnv *jniEnv;
     JavaVM *javaVM;
     jobject jAudioTrackObj;

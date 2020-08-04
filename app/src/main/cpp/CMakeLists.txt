@@ -27,7 +27,7 @@ add_library( # Sets the name of the library.
              SHARED
 
              # Provides a relative path to your source file(s).
-             ${SRC_LIST} ${SRC_FACE} ${SRC_AUDIO})
+             ${SRC_LIST} ${SRC_FACE} ${SRC_AUDIO} audio/MyJNICall.cpp)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
