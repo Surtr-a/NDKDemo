@@ -23,12 +23,14 @@ void MyFFmpeg::play() {
     avFormatContext = avformat_alloc_context();
     if (avformat_open_input(&avFormatContext, url, nullptr, nullptr) != 0) {
         LOGE("打开音频失败");
+        callPlayerJNIError(OPEN_INPUT_ERROR_CODE, "open input failed");
         return;
     }
 
     // 获取音频流信息
     if (avformat_find_stream_info(avFormatContext, nullptr) < 0) {
         LOGE("获取音频流失败");
+        callPlayerJNIError(FIND_STREAM_INFO_ERROR_CODE, "find stream info failed");
         return;
     }
 
@@ -38,6 +40,7 @@ void MyFFmpeg::play() {
                                              nullptr, 0);
     if (audio_stream_index < 0) {
         LOGE("查找音频流失败");
+        callPlayerJNIError(FIND_BEST_STREAM_ERROR_CODE, "find best stream failed");
         return;
     }
 
@@ -46,19 +49,22 @@ void MyFFmpeg::play() {
     AVCodec *avCodec = avcodec_find_decoder(aVCodecParameters->codec_id);
     if (avCodec == nullptr) {
         LOGE("获取解码器失败");
+        callPlayerJNIError(FIND_DECODER_ERROR_CODE, "find decoder failed");
         return;
     }
 
     // 获取解码器上下文
     avCodecContext = avcodec_alloc_context3(avCodec);
     if (avcodec_parameters_to_context(avCodecContext, aVCodecParameters) < 0) {
-        LOGE("获取编码器上下文失败");
+        LOGE("获取解码器上下文失败");
+        callPlayerJNIError(PARAMETERS_TO_CONTEXT_ERROR_CODE, "parameters to context failed");
         return;
     }
 
-    // 打开编码器
+    // 打开解码器
     if (avcodec_open2(avCodecContext, avCodec, nullptr) != 0) {
-        LOGE("打开编码器失败");
+        LOGE("打开解码器失败");
+        callPlayerJNIError(OPEN_DECODER_ERROR_CODE, "open decoder failed");
         return;
     }
 
@@ -82,10 +88,12 @@ void MyFFmpeg::play() {
                                     nullptr);
     if (swrContext == nullptr) {
         LOGE("获取重采样上下文失败");
+        callPlayerJNIError(ALLOC_SET_OPTS_ERROR_CODE, "alloc set opts failed");
         return;
     }
     if (swr_init(swrContext) < 0) {
         LOGE("初始化重采样上下文失败");
+        callPlayerJNIError(SWR_INIT_ERROR_CODE, "init swr failed");
         return;
     }
 
@@ -154,7 +162,8 @@ void MyFFmpeg::release() {
     avformat_network_deinit();
 }
 
-void MyFFmpeg::callPlayerJNIError(int code, char *msg) {
-
+void MyFFmpeg::callPlayerJNIError(int code, const char *msg) {
+    release();
+    myJNICall->callPlayerError(code, msg);
 }
 

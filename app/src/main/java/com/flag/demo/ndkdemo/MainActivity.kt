@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
                     startActivity(Intent(this, FaceDetectionActivity::class.java))
                 }
                 2 -> {
-                    startActivity(Intent(this, AudioPlayerDemo::class.java))
+                    startActivity(Intent(this, AudioPlayerDemoActivity::class.java))
                 }
             }
         }

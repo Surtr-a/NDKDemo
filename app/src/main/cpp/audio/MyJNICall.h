@@ -6,16 +6,19 @@
 #define NDKDEMO_MYJNICALL_H
 
 
-#include "../../../../../../../../../opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/jni.h"
+#include "jni.h"
 
 class MyJNICall {
 public:
     JNIEnv *jniEnv;
     JavaVM *javaVM;
     jobject jAudioTrackObj;
+    jobject jPlayerObj;
     jmethodID jAudioTrackWriteMid;
+    jmethodID jPlayerErrorMid;
+
 public:
-    MyJNICall(JNIEnv *jniEnv, JavaVM *javaVM);
+    MyJNICall(JNIEnv *jniEnv, JavaVM *javaVM, jobject jPlayerObj);
     ~MyJNICall();
 
 private:
@@ -23,6 +26,7 @@ private:
 
 public:
     void callAudioTrackWrite(jbyteArray audioData, int offsetIntByte, int sizeIntByte);
+    void callPlayerError(int code, const char *msg);
 };
 
 

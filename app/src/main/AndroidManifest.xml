@@ -13,7 +13,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".AudioPlayerDemo"></activity>
+        <activity android:name=".AudioPlayerDemoActivity"></activity>
         <activity android:name=".FaceDetectionActivity" />
         <activity android:name=".BitmapDemoActivity" />
         <activity android:name=".MainActivity">

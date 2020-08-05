@@ -26,7 +26,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_flag_demo_ndkdemo_utils_MyPlayer_nPlay(JNIEnv *env, jobject thiz, jstring url) {
     const char *url_ = env->GetStringUTFChars(url, nullptr);
-    myJNICall = new MyJNICall(env, nullptr);
+    myJNICall = new MyJNICall(env, nullptr, thiz);
     myFFmpeg = new MyFFmpeg(myJNICall, url_);
     myFFmpeg->play();
 

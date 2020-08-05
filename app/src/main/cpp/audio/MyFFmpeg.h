@@ -25,7 +25,7 @@ public:
 public:
     void play();
     void release();
-    void callPlayerJNIError(int code, char *msg);
+    void callPlayerJNIError(int code, const char *msg);
 };
 
 

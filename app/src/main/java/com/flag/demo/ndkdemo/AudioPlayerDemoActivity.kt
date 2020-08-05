@@ -4,10 +4,11 @@ import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
+import android.util.Log
 import com.flag.demo.ndkdemo.utils.MyPlayer
 import java.io.File
 
-class AudioPlayerDemo : AppCompatActivity() {
+class AudioPlayerDemoActivity : AppCompatActivity() {
 
     val mMusicFile = File(Environment.getExternalStorageDirectory(), "netease/cloudmusic/Music/コミネリサ - Resuscitated Hope.flac")
     private lateinit var myPlayer: MyPlayer
@@ -19,5 +20,9 @@ class AudioPlayerDemo : AppCompatActivity() {
         myPlayer = MyPlayer()
         myPlayer.setDataSource(mMusicFile.absolutePath)
         myPlayer.play()
+        myPlayer.setOnErrorListener(MediaErrorListener { code, msg ->
+            Log.e("TAG", "error code: " + code)
+            Log.e("TAG", "msg: " + msg)
+        })
     }
 }

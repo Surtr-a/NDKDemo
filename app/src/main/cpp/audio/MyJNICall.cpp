@@ -5,10 +5,14 @@
 #include "MyJNICall.h"
 #include "../android_log.h"
 
-MyJNICall::MyJNICall(JNIEnv *jniEnv, JavaVM *javaVM) {
+MyJNICall::MyJNICall(JNIEnv *jniEnv, JavaVM *javaVM, jobject jPlayerObj) {
     this->jniEnv = jniEnv;
     this->javaVM = javaVM;
+    this->jPlayerObj = jPlayerObj;
     initCreateAudioTrack();
+
+    jclass jPlayerClass = jniEnv->GetObjectClass(jPlayerObj);
+    jPlayerErrorMid = jniEnv->GetMethodID(jPlayerClass, "onError", "(ILjava/lang/String;)V");
 }
 
 void MyJNICall::initCreateAudioTrack() {
@@ -38,4 +42,10 @@ void MyJNICall::callAudioTrackWrite(jbyteArray audioData, int offsetIntByte, int
 
 MyJNICall::~MyJNICall() {
     jniEnv->DeleteLocalRef(jAudioTrackObj);
+}
+
+void MyJNICall::callPlayerError(int code, const char *msg) {
+    jstring jMsg = jniEnv->NewStringUTF(msg);
+    jniEnv->CallVoidMethod(jPlayerObj, jPlayerErrorMid, code, jMsg);
+    jniEnv->DeleteLocalRef(jMsg);
 }
