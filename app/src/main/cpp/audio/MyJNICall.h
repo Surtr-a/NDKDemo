@@ -7,26 +7,27 @@
 
 
 #include "jni.h"
+#include "../android_log.h"
+
+enum ThreadMode{
+    THREAD_CHILD,THREAD_MAIN
+};
 
 class MyJNICall {
 public:
     JNIEnv *jniEnv;
     JavaVM *javaVM;
-    jobject jAudioTrackObj;
     jobject jPlayerObj;
-    jmethodID jAudioTrackWriteMid;
     jmethodID jPlayerErrorMid;
+    jmethodID jPlayerPreparedMid;
 
 public:
     MyJNICall(JNIEnv *jniEnv, JavaVM *javaVM, jobject jPlayerObj);
     ~MyJNICall();
 
-private:
-    void initCreateAudioTrack();
-
 public:
-    void callAudioTrackWrite(jbyteArray audioData, int offsetIntByte, int sizeIntByte);
-    void callPlayerError(int code, const char *msg);
+    void callPlayerError(ThreadMode threadMode, int code, const char *msg);
+    void callPlayerPrepared(ThreadMode mode);
 };
 
 

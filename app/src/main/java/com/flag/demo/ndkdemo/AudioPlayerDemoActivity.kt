@@ -19,10 +19,14 @@ class AudioPlayerDemoActivity : AppCompatActivity() {
 
         myPlayer = MyPlayer()
         myPlayer.setDataSource(mMusicFile.absolutePath)
-        myPlayer.play()
         myPlayer.setOnErrorListener(MediaErrorListener { code, msg ->
-            Log.e("TAG", "error code: " + code)
-            Log.e("TAG", "msg: " + msg)
+            Log.e("TAG", "error code: $code")
+            Log.e("TAG", "msg: $msg")
         })
+        myPlayer.setOnPreparedListener(MediaPreparedListener {
+            // 准备完毕再播放
+            myPlayer.play()
+        })
+        myPlayer.prepareAsync()
     }
 }

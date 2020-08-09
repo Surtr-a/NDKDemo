@@ -3,49 +3,56 @@
 //
 
 #include "MyJNICall.h"
-#include "../android_log.h"
 
 MyJNICall::MyJNICall(JNIEnv *jniEnv, JavaVM *javaVM, jobject jPlayerObj) {
     this->jniEnv = jniEnv;
     this->javaVM = javaVM;
-    this->jPlayerObj = jPlayerObj;
-    initCreateAudioTrack();
+    // 创建了新线程，需要创建一个全局变量
+    this->jPlayerObj = jniEnv->NewGlobalRef(jPlayerObj);
 
     jclass jPlayerClass = jniEnv->GetObjectClass(jPlayerObj);
     jPlayerErrorMid = jniEnv->GetMethodID(jPlayerClass, "onError", "(ILjava/lang/String;)V");
-}
-
-void MyJNICall::initCreateAudioTrack() {
-    jclass audio_track_class = jniEnv->FindClass("android/media/AudioTrack");
-    jmethodID construct_mid = jniEnv->GetMethodID(audio_track_class, "<init>", "(IIIIII)V");
-
-    int channelConfig = (0x4 | 0x8);
-    int audioFormat = 2;
-    int sampleRateInHz = AUDIO_SAMPLE_RATE;
-
-    // 调用 getMinBufferSize()
-    jmethodID  getMinBufferSizeMid = jniEnv->GetStaticMethodID(audio_track_class, "getMinBufferSize", "(III)I");
-    int minBufferSizeInByte = jniEnv->CallStaticIntMethod(audio_track_class, getMinBufferSizeMid, sampleRateInHz, channelConfig, audioFormat);
-    jAudioTrackObj = jniEnv->NewObject(audio_track_class, construct_mid, 3, sampleRateInHz, channelConfig, audioFormat, minBufferSizeInByte, 1);
-
-    // 调用 play()
-    jmethodID audio_track_play_mid = jniEnv->GetMethodID(audio_track_class, "play", "()V");
-    jniEnv->CallVoidMethod(jAudioTrackObj, audio_track_play_mid);
-
-    // write()
-    jAudioTrackWriteMid = jniEnv->GetMethodID(audio_track_class, "write", "([BII)I");
-}
-
-void MyJNICall::callAudioTrackWrite(jbyteArray audioData, int offsetIntByte, int sizeIntByte) {
-    jniEnv->CallIntMethod(jAudioTrackObj, jAudioTrackWriteMid, audioData, offsetIntByte, sizeIntByte);
+    jPlayerPreparedMid = jniEnv->GetMethodID(jPlayerClass, "onPrepared", "()V");
 }
 
 MyJNICall::~MyJNICall() {
-    jniEnv->DeleteLocalRef(jAudioTrackObj);
+    jniEnv->DeleteGlobalRef(jPlayerObj);
 }
 
-void MyJNICall::callPlayerError(int code, const char *msg) {
-    jstring jMsg = jniEnv->NewStringUTF(msg);
-    jniEnv->CallVoidMethod(jPlayerObj, jPlayerErrorMid, code, jMsg);
-    jniEnv->DeleteLocalRef(jMsg);
+void MyJNICall::callPlayerError(ThreadMode threadMode, int code, const char *msg) {
+    if (threadMode == THREAD_MAIN) {
+        jstring jMsg = jniEnv->NewStringUTF(msg);
+        jniEnv->CallVoidMethod(jPlayerObj, jPlayerErrorMid, code, jMsg);
+        jniEnv->DeleteLocalRef(jMsg);
+    } else {    // 子线程
+        // 获取当前线程的 env
+        JNIEnv *env;
+        if (javaVM->AttachCurrentThread(&env, nullptr) != JNI_OK) {
+            LOGE("get child thread JNIEnv failed");
+            return;
+        }
+
+        jstring jMsg = env->NewStringUTF(msg);
+        env->CallVoidMethod(jPlayerObj, jPlayerErrorMid, code, jMsg);
+        env->DeleteLocalRef(jMsg);
+
+        javaVM->DetachCurrentThread();
+    }
+}
+
+void MyJNICall::callPlayerPrepared(ThreadMode threadMode) {
+    if (threadMode == THREAD_MAIN) {
+        jniEnv->CallVoidMethod(jPlayerObj, jPlayerPreparedMid);
+    } else {    // 子线程
+        // 获取当前线程的 env
+        JNIEnv *env;
+        if (javaVM->AttachCurrentThread(&env, nullptr) != JNI_OK) {
+            LOGE("get child thread JNIEnv failed");
+            return;
+        }
+
+        env->CallVoidMethod(jPlayerObj, jPlayerPreparedMid);
+
+        javaVM->DetachCurrentThread();
+    }
 }
