@@ -19,6 +19,7 @@ class MyFFmpeg {
 public:
     AVFormatContext *avFormatContext = nullptr;
     char *url = nullptr;
+    MyPlayerStatus *myPlayerStatus = nullptr;
     MyJNICall *myJNICall = nullptr;
     MyAudio *myAudio = nullptr;
 

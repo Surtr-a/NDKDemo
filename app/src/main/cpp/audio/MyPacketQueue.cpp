@@ -5,6 +5,7 @@
 
 #include "MyPacketQueue.h"
 
+// 生产者消费者模式实现 Packet 队列
 MyPacketQueue::MyPacketQueue() {
     avPacketQueue = new std::queue<AVPacket *>();
     pthread_mutex_init(&packetMutex, nullptr);

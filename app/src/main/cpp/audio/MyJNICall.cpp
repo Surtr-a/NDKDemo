@@ -7,18 +7,20 @@
 MyJNICall::MyJNICall(JNIEnv *jniEnv, JavaVM *javaVM, jobject jPlayerObj) {
     this->jniEnv = jniEnv;
     this->javaVM = javaVM;
-    // 创建了新线程，需要创建一个全局变量
+    // 创建全局引用跨线程调用
     this->jPlayerObj = jniEnv->NewGlobalRef(jPlayerObj);
 
     jclass jPlayerClass = jniEnv->GetObjectClass(jPlayerObj);
     jPlayerErrorMid = jniEnv->GetMethodID(jPlayerClass, "onError", "(ILjava/lang/String;)V");
     jPlayerPreparedMid = jniEnv->GetMethodID(jPlayerClass, "onPrepared", "()V");
+    jniEnv->DeleteLocalRef(jPlayerClass);
 }
 
 MyJNICall::~MyJNICall() {
     jniEnv->DeleteGlobalRef(jPlayerObj);
 }
 
+// 调用 Java 层回调
 void MyJNICall::callPlayerError(ThreadMode threadMode, int code, const char *msg) {
     if (threadMode == THREAD_MAIN) {
         jstring jMsg = jniEnv->NewStringUTF(msg);
@@ -39,7 +41,6 @@ void MyJNICall::callPlayerError(ThreadMode threadMode, int code, const char *msg
         javaVM->DetachCurrentThread();
     }
 }
-
 void MyJNICall::callPlayerPrepared(ThreadMode threadMode) {
     if (threadMode == THREAD_MAIN) {
         jniEnv->CallVoidMethod(jPlayerObj, jPlayerPreparedMid);
