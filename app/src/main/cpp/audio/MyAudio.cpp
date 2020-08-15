@@ -27,7 +27,7 @@ int MyAudio::resampleAudio() {
     AVPacket *avPacket = nullptr;
     AVFrame *avFrame = av_frame_alloc();
 
-    while (!myPlayerState->isExit) {
+    while (!myPlayerStatus->isExit) {
         avPacket = myPacketQueue->pop();
         // 解码音频类型的 Packet
         avcodec_send_packet(avCodecContext, avPacket);
@@ -38,6 +38,12 @@ int MyAudio::resampleAudio() {
             // 重采样, 返回重采样的个数，即 pFrame->nb_sample
             dataSize = swr_convert(swrContext, &resampleOutBuffer, avFrame->nb_samples,
                                    (const uint8_t **) avFrame->data, avFrame->nb_samples);
+
+            // 获取音频当前播放的今进度
+            double time = av_frame_get_best_effort_timestamp(avFrame) * av_q2d(timeBase);
+            if (time > currentTime) {
+                currentTime = time;
+            }
             break;
         }
         // 解引用

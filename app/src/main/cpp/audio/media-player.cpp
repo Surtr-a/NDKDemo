@@ -67,3 +67,11 @@ Java_com_flag_demo_ndkdemo_utils_MyPlayer_nPlay(JNIEnv *env, jobject thiz, jstri
         myFFmpeg->play();
     }
 }
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_flag_demo_ndkdemo_utils_MyPlayer_nSetSurface(JNIEnv *env, jobject thiz, jobject surface) {
+    if (myFFmpeg) {
+        myFFmpeg->setSurface(env, surface);
+    }
+}

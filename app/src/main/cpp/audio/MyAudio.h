@@ -31,7 +31,7 @@ public:
     ~MyAudio();
 
 public:
-    void play();
+    void play() override;
 
     void initCreateOpenSLES();
 

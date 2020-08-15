@@ -5,8 +5,8 @@
 #include "MyFFmpeg.h"
 
 // FFmpeg 解封装
-MyFFmpeg::MyFFmpeg(MyJNICall *myJnNICall1, char *url) {
-    this->myJNICall = myJnNICall1;
+MyFFmpeg::MyFFmpeg(MyJNICall *myJNICall, char *url) {
+    this->myJNICall = myJNICall;
     // 复制一份，避免在外面被销毁
     this->url = static_cast<char *>(malloc(strlen(url) + 1));
     memcpy(this->url, url, strlen(url) + 1);
@@ -24,8 +24,11 @@ void *threadReadPacket(void *context) {
         AVPacket *avPacket = av_packet_alloc();
         if (av_read_frame(myFFmpeg->avFormatContext, avPacket) >= 0) {
             if (avPacket->stream_index == myFFmpeg->myAudio->streamIndex) {
-                // 将 Packet 放入队列
+                // 将 Packet 放入音频队列
                 myFFmpeg->myAudio->myPacketQueue->push(avPacket);
+            } else if (avPacket->stream_index == myFFmpeg->myVideo->streamIndex) {
+                // 将 Packet 放入视频队列
+                myFFmpeg->myVideo->myPacketQueue->push(avPacket);
             } else {
                 av_packet_free(&avPacket);
             }
@@ -42,8 +45,12 @@ void MyFFmpeg::play() {
     pthread_create(&readPacketThreadT, nullptr, threadReadPacket, this);
     pthread_detach(readPacketThreadT);
 
-    if (myAudio != nullptr) {
+    if (myAudio) {
         myAudio->play();
+    }
+
+    if (myVideo) {
+        myVideo->play();
     }
 }
 
@@ -65,6 +72,10 @@ void MyFFmpeg::release() {
     if (myAudio) {
         delete myAudio;
         myAudio = nullptr;
+    }
+    if (myVideo) {
+        delete myVideo;
+        myVideo = nullptr;
     }
 }
 
@@ -120,7 +131,26 @@ void MyFFmpeg::prepare(ThreadMode threadMode) {
     myAudio = new MyAudio(audio_stream_index, myJNICall, myPlayerStatus);
     // 解码流
     myAudio->analysisStream(threadMode, avFormatContext);
+
+    // 查找视频流索引 Index
+    int video_stream_index;
+    video_stream_index = av_find_best_stream(avFormatContext, AVMediaType::AVMEDIA_TYPE_VIDEO, -1, -1,
+                                             nullptr, 0);
+    if (video_stream_index < 0) {
+        LOGE("查找视频索引流失败");
+        callPlayerJNIError(threadMode, FIND_BEST_STREAM_ERROR_CODE, "find best stream failed");
+        return;
+    }
+    myVideo = new MyVideo(video_stream_index, myJNICall, myPlayerStatus, myAudio);
+    myVideo->analysisStream(threadMode, avFormatContext);
+
     // 准备完成
     myJNICall->callPlayerPrepared(threadMode);
+}
+
+void MyFFmpeg::setSurface(JNIEnv *env, jobject surface) {
+    if (myVideo) {
+        myVideo->setSurface(env, surface);
+    }
 }
 

@@ -12,6 +12,8 @@ include_directories(include)
 aux_source_directory(${CMAKE_SOURCE_DIR} SRC_LIST)
 aux_source_directory(${CMAKE_SOURCE_DIR}/face SRC_FACE)
 aux_source_directory(${CMAKE_SOURCE_DIR}/audio SRC_AUDIO)
+aux_source_directory(${CMAKE_SOURCE_DIR}/base SRC_BASE)
+aux_source_directory(${CMAKE_SOURCE_DIR}/video SRC_VIDEO)
 
 link_directories(${CMAKE_SOURCE_DIR}/../jniLibs/arm64-v8a)
 
@@ -27,7 +29,7 @@ add_library( # Sets the name of the library.
              SHARED
 
              # Provides a relative path to your source file(s).
-             ${SRC_LIST} ${SRC_FACE} ${SRC_AUDIO} base/MyMedia.cpp)
+             ${SRC_LIST} ${SRC_FACE} ${SRC_AUDIO} ${SRC_BASE} ${SRC_VIDEO})
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
@@ -66,6 +68,7 @@ target_link_libraries( # Specifies the target library.
                         # 视频像素数据格式转换
                         swscale
                         OpenSLES
+                        android
                        # Links the target library to the log library
                        # included in the NDK.
                        ${log-lib} )

@@ -10,6 +10,8 @@
 #include "MyJNICall.h"
 #include "MyAudio.h"
 #include "../android_log.h"
+#include "../video/MyVideo.h"
+
 extern "C" {
 #include "libavformat/avformat.h"
 #include "libswresample/swresample.h"
@@ -22,9 +24,10 @@ public:
     MyPlayerStatus *myPlayerStatus = nullptr;
     MyJNICall *myJNICall = nullptr;
     MyAudio *myAudio = nullptr;
+    MyVideo *myVideo = nullptr;
 
 public:
-    MyFFmpeg(MyJNICall *myJnNICall1, char *url);
+    MyFFmpeg(MyJNICall *myJNICall, char *url);
     ~MyFFmpeg();
 
 public:
@@ -32,6 +35,7 @@ public:
     void prepare();
     void prepareAsync();
     void prepare(ThreadMode threadMode);
+    void setSurface(JNIEnv *env, jobject surface);
 
 private:
     void release();

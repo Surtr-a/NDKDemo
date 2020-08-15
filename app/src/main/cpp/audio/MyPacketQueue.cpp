@@ -49,3 +49,7 @@ void MyPacketQueue::clear() {
         avPacketQueue->pop();
     }
 }
+
+int MyPacketQueue::getSize() {
+    return avPacketQueue->size();
+}

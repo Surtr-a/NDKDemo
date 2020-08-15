@@ -25,6 +25,7 @@ public:
     void push(AVPacket *avPacket);
     AVPacket *pop();
     void clear();
+    int getSize();
 };
 
 

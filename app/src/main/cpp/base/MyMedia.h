@@ -19,9 +19,9 @@ class MyMedia {
 public:
     int streamIndex = -1;
     AVCodecContext *avCodecContext = nullptr;
-    MyJNICall *myJniCall = nullptr;
     MyPacketQueue *myPacketQueue = nullptr;
-    MyPlayerStatus *myPlayerState = nullptr;
+    MyPlayerStatus *myPlayerStatus = nullptr;
+    MyJNICall *myJniCall = nullptr;
     // 视频时长
     int duration = 0;
     // 当前进度

@@ -20,6 +20,7 @@ class MainActivity : AppCompatActivity() {
         btnNameList.add("BitmapDemo")
         btnNameList.add("FaceDetectionDemo")
         btnNameList.add("AudioPlayerDemo")
+        btnNameList.add("VideoPlayerDemo")
 
         val adapter = MainAdapter(btnNameList, this)
         rv_main.layoutManager = LinearLayoutManager(this)
@@ -34,6 +35,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 2 -> {
                     startActivity(Intent(this, AudioPlayerDemoActivity::class.java))
+                }
+                3 -> {
+                    startActivity(Intent(this, VideoPlayerDemoActivity::class.java))
                 }
             }
         }

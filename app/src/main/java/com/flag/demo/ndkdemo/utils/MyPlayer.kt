@@ -67,8 +67,16 @@ class MyPlayer {
         nPrepareAsync(url)
     }
 
+    fun stop() {
+
+    }
+
+    fun setSurface(surface: Surface) {
+        nSetSurface(surface)
+    }
+
     private external fun nPlay(url: String)
     private external fun nPrepare(url: String)
     private external fun nPrepareAsync(url: String)
-
+    private external fun nSetSurface(surface: Surface)
 }

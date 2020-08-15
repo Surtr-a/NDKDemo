@@ -4,10 +4,10 @@
 
 #include "MyMedia.h"
 
-MyMedia::MyMedia(int streamIndex, MyJNICall *myJNICall, MyPlayerStatus *myPlayerState) {
+MyMedia::MyMedia(int streamIndex, MyJNICall *myJNICall, MyPlayerStatus *myPlayerStatus) {
     this->streamIndex = streamIndex;
     this->myJniCall = myJNICall;
-    this->myPlayerState = myPlayerState;
+    this->myPlayerStatus = myPlayerStatus;
     myPacketQueue = new MyPacketQueue();
 }
 
@@ -62,4 +62,6 @@ void MyMedia::publicAnalysisStream(ThreadMode threadMode, AVFormatContext *avFor
         callPlayerJNIError(threadMode, OPEN_DECODER_ERROR_CODE, "open decoder failed");
         return;
     }
+    duration = avFormatContext->duration;
+    timeBase = avFormatContext->streams[streamIndex]->time_base;
 }
